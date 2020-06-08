@@ -8,8 +8,8 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-train = pd.read_csv('D:/kaggle/titanic/train.csv')
-test = pd.read_csv('D:/kaggle/titanic/test.csv')
+train = pd.read_csv('D:/data/kaggle/titanic/train.csv')
+test = pd.read_csv('D:/data/kaggle/titanic/test.csv')
 
 print(train.info())
 '''
@@ -123,31 +123,36 @@ for dataset in dataset:                                         # test값
 
 
 # Age
-print(dataset['Age'].mean())   # 30.272590361445783
+print(train['Age'].mean())   # 29.69911764705882
 
 for data in dataset:
     dataset['Age'] = dataset['Age'].fillna(dataset['Age'].mean())  # trian'Age', test'Age'의 평균
     dataset['Age'] = dataset['Age'].astype(int)                    # train, test의 'Age'를 int형으로 
 
 
+
 # SibSp
-sibsp_s_d = pd.crosstab(train['Survived'], train['SibSp'])
-print(sibsp_s_d)
-
-train['Parch'] = train['Parch'].astype(int)
-test['Parch'] = test['Parch'].astype(int)
-print(dataset) 
-print(type(dataset))
-
 # Parch
-for dataset in dataset:
-    dataset['Family'] = dataset['Parch'] + dataset['SibSp']
-    dataset['Family'] = dataset['Family'].astype(int)
+
+train['Family'] = train['Parch'] + train['SibSp']
+train['Family'] = train['Family'].astype(int)
+
+test['Family'] = test['Parch'] + test['SibSp']
+test['Family'] = test['Family'].astype(int)
    
-    # data['Family'] = data['SibSp'] + data['Parch']
-    # TypeError: string indices must be integers
 
 # tickect
-for data in dataset:
-    data.loc['Ticket_num'] = data.loc['Ticket_num'].int.extract('([1-9]+)\d')
-print(train['Ticket_num'].head())
+train['Ticket'] = train['Ticket'].astype(str)
+train['Ticket_num'] = train.Ticket.str.extract(r'(\d{4,6})')
+train['Ticket_num'] = train['Ticket_num'].astype(float)
+
+test['Ticket'] = test['Ticket'].astype(str)
+test['Ticket_num'] = test.Ticket.str.extract(r'(\d{4,6})')
+train['Ticket_num'] = train['Ticket_num'].astype(float)
+
+print(train['Ticket_num'])
+
+# cabin
+train_cabin = train['cabin']
+a = train['cabin'].dropna().copy()
+b = train['cabin'].isnull().copy()
