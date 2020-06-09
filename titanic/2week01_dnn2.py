@@ -8,8 +8,8 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-train = pd.read_csv('D:/kaggle/titanic/train.csv')
-test = pd.read_csv('D:/kaggle/titanic/test.csv')
+train = pd.read_csv('D:/bit_camp/Study/data/kaggle/titanic/train.csv')
+test = pd.read_csv('D:/bit_camp/Study/data/kaggle/titanic/test.csv')
 
 print(train.info())
 '''
