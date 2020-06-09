@@ -5,7 +5,7 @@ from datetime import datetime
 from dateutil.parser import parse
 
 
-dataset = pd.read_csv('D:/Practice/kaggle/Loan_data.csv')
+dataset = pd.read_csv('D:/bit camp/kaggle/data/Loan_payments_data.csv')
 
 print(dataset.info())
 '''
@@ -55,16 +55,13 @@ print(dataset.loan_status.value_counts())
 # 1    100
 # Name: loan_status, dtype: int64
 
+# y 설정 및 원핫 인코딩
 from keras.utils.np_utils import to_categorical
 y = dataset['loan_status']
+y = y.values
 y = to_categorical(y)                 # 3중 분류
 
-
-
 # Principal
-
-
-
 
 # education
 print(dataset.education.value_counts(dropna = False))
@@ -80,6 +77,7 @@ for dataset in [dataset]:
     dataset.loc[(dataset['education'] == 'Bechalor'), 'education'] =  2
     dataset.loc[(dataset['education'] == 'Master or Above'), 'education'] =  3
 
+dataset['education'] = dataset['education'].astype(int)
 
 # terms
 print(dataset.terms.value_counts(dropna = False))
@@ -107,6 +105,15 @@ print(dataset.effective_date.value_counts(dropna=False))
 # 9/9/2016      15
 # 9/8/2016       4
 # Name: effective_date, dtype: int64
+for dataset in [dataset]:
+    dataset.loc[(dataset['effective_date'] == '9/8/2016'), 'effective' ] = 0
+    dataset.loc[(dataset['effective_date'] == '9/9/2016'), 'effective' ] = 1
+    dataset.loc[(dataset['effective_date'] == '9/10/2016'), 'effective' ] = 2
+    dataset.loc[(dataset['effective_date'] == '9/11/2016'), 'effective' ] = 3
+    dataset.loc[(dataset['effective_date'] == '9/12/2016'), 'effective' ] = 4
+    dataset.loc[(dataset['effective_date'] == '9/13/2016'), 'effective' ] = 5
+    dataset.loc[(dataset['effective_date'] == '9/14/2016'), 'effective' ] = 6
+
 
 
 # 모두 날짜형으로 바꾸기
@@ -118,14 +125,57 @@ print(dataset['effective_date'].head())
 print(dataset['due_date'].head())
 
 
-# paid off time
-dataset.loc['paid_off_time'] = dataset.loc['paid_off_time'].fillna(values = '0')
+# past_due_days 채워넣기
+for i in range(0, 300):
+    dataset.iloc[i, 6] = parse(dataset.iloc[i, 6])  # paid off time 
+    dataset.iloc[i, 7] = dataset.iloc[i, 6] - dataset.iloc[i, 5]  
 
-for i in range(len(dataset.values)):
-    dataset.iloc[i, 6] = parse(dataset.iloc[i, 6])
-
-print(dataset['paid_off_time'].head())
-
+for i in range(0 ,300):
+    dataset.iloc[i, 7] = dataset.iloc[i, 7].days    # day만 사용
+dataset['past_due_days'] = dataset['past_due_days'].astype(float)
 
 
+drop = ['Loan_ID', 'loan_status', 'due_date', 'paid_off_time', 'effective_date']
+x = dataset.drop(drop, axis = 1)
+print(x.info())
+x = pd.get_dummies(x)   # gender 원핫인코딩
+x = x.values
+print(x.shape)     # (500, 8)
+print(y.shape)     # (500, 3)
 
+#scaler
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+scaler.fit(x)
+x = scaler.transform(x)
+
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(x, y, random_state = 33, train_size =0.8)
+
+#2. model
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+model = Sequential()
+model.add(Dense(50, input_shape = (8, ), activation = 'relu'))
+model.add(Dropout(0.3))
+model.add(Dense(100, activation = 'relu'))
+model.add(Dropout(0.3))
+model.add(Dense(100, activation = 'relu'))
+model.add(Dropout(0.3))
+model.add(Dense(100, activation = 'relu'))
+model.add(Dropout(0.3))
+model.add(Dense(100, activation = 'relu'))
+model.add(Dropout(0.3))
+model.add(Dense(3, activation = 'softmax'))
+
+#3. compile, fit
+model.compile(loss = 'categorical_crossentropy', metrics = ['acc'], optimizer = 'adam')
+model.fit(x_train, y_train, epochs = 100, batch_size = 32, validation_split = 0.2)
+
+#4. evaluate, predict
+loss_acc = model.evaluate(x_test, y_test, batch_size = 32)
+print('loss_acc: ', loss_acc)
+
+y_predict = model.predict(x_test)
+y_predict = np.argmax(y_predict, axis =1)   # 원핫 디코딩
+print(y_predict)
